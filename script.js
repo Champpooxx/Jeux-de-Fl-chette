@@ -12,6 +12,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const uploader = document.getElementById('uploader');
     const resetButton = document.getElementById('reset-button');
     const changeImageButton = document.getElementById('change-image-button');
+    const weaponButtons = document.querySelectorAll('.weapon-button');
     const scoreEl = document.getElementById('score');
     const lastScoreEl = document.getElementById('last-score');
     const dartsThrownEl = document.getElementById('darts-thrown');
@@ -31,20 +32,21 @@ document.addEventListener('DOMContentLoaded', () => {
     let hoveredZone = null;
     let highScore = localStorage.getItem('highScore') || 0;
     let audioContext;
+    let currentWeapon = 'dart';
 
     // ----------------------------------------------------------------------------
     //  Configuration
     // ----------------------------------------------------------------------------
 
-    const MAX_WIDTH = 500;
-    const MAX_HEIGHT = 500;
+    const MAX_WIDTH = 800;
+    const MAX_HEIGHT = 800;
 
     const scoreZones = [
-        { radius: 15, points: 100 },
-        { radius: 30, points: 50 },
-        { radius: 60, points: 25 },
-        { radius: 90, points: 10 },
-        { radius: 150, points: 5 },
+        { radius: 24, points: 100 },
+        { radius: 48, points: 50 },
+        { radius: 96, points: 25 },
+        { radius: 144, points: 10 },
+        { radius: 240, points: 5 },
     ];
 
     // ----------------------------------------------------------------------------
@@ -64,6 +66,13 @@ document.addEventListener('DOMContentLoaded', () => {
     canvas.addEventListener('mousemove', handleMouseMove);
     canvas.addEventListener('mouseleave', handleMouseLeave);
     resetButton.addEventListener('click', resetGame);
+    weaponButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            currentWeapon = button.dataset.weapon;
+            weaponButtons.forEach(btn => btn.classList.remove('active'));
+            button.classList.add('active');
+        });
+    });
 
     // ----------------------------------------------------------------------------
     //  Image Handling
@@ -159,7 +168,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const x = event.clientX - rect.left;
         const y = event.clientY - rect.top;
 
-        animateDart({ x, y });
+        animateProjectile({ x, y });
     }
 
     // ----------------------------------------------------------------------------
@@ -167,10 +176,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // ----------------------------------------------------------------------------
 
     /**
-     * Animates the dart throw.
+     * Animates the projectile throw.
      * @param {object} target - The x and y coordinates of the target.
      */
-    function animateDart(target) {
+    function animateProjectile(target) {
         isAnimating = true;
         const duration = 500; // ms
         const start = { x: canvas.width / 2, y: canvas.height + 50, size: 100 };
@@ -188,12 +197,12 @@ document.addEventListener('DOMContentLoaded', () => {
             const currentSize = start.size + (end.size - start.size) * easeOutQuart;
 
             redrawCanvas();
-            drawDart(currentX, currentY, currentSize);
+            drawProjectile(currentX, currentY, currentSize, currentWeapon);
 
             if (progress < 1) {
                 requestAnimationFrame(animationStep);
             } else {
-                darts.push(target);
+                darts.push({ x: target.x, y: target.y, weapon: currentWeapon });
                 playHitSound();
                 calculateScore(target.x, target.y);
                 updateStats();
@@ -206,16 +215,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     /**
-     * Draws a dart on the canvas.
+     * Draws a projectile on the canvas.
      * @param {number} x - The x coordinate.
      * @param {number} y - The y coordinate.
-     * @param {number} size - The size of the dart emoji.
+     * @param {number} size - The size of the projectile emoji.
+     * @param {string} weapon - The weapon type.
      */
-    function drawDart(x, y, size = 24) {
+    function drawProjectile(x, y, size = 24, weapon = 'dart') {
         ctx.font = `${size}px serif`;
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('🎯', x, y);
+        const emoji = weapon === 'dart' ? '🎯' : '🪚';
+        ctx.fillText(emoji, x, y);
     }
 
     /**
@@ -229,7 +240,7 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
             drawWelcomeMessage();
         }
-        darts.forEach(d => drawDart(d.x, d.y));
+        darts.forEach(d => drawProjectile(d.x, d.y, 24, d.weapon));
     }
 
     /**

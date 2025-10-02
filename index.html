@@ -10,9 +10,13 @@
     <div class="container">
         <h1>Jeu de Fléchettes</h1>
         <div class="game-container">
-            <canvas id="dartboard" width="500" height="500"></canvas>
+            <canvas id="dartboard" width="800" height="800"></canvas>
         </div>
         <div class="controls">
+            <div id="weapon-selection">
+                <button class="weapon-button active" data-weapon="dart">Dart 🎯</button>
+                <button class="weapon-button" data-weapon="chainsaw">Tronçonneuse 🪚</button>
+            </div>
             <input type="file" id="uploader" accept="image/*">
             <button id="reset-button">Nouvelle partie</button>
             <button id="change-image-button">Changer d'image</button>
