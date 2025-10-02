@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jeu de Fléchettes</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Jeu de Fléchettes</h1>
+        <div class="game-container">
+            <canvas id="dartboard" width="500" height="500"></canvas>
+        </div>
+        <div class="controls">
+            <input type="file" id="uploader" accept="image/*">
+            <button id="reset-button">Nouvelle partie</button>
+            <button id="change-image-button">Changer d'image</button>
+        </div>
+        <div class="scores">
+            <h2>Score: <span id="score">0</span></h2>
+            <p>Dernier lancer: <span id="last-score">0</span></p>
+            <p>Fléchettes lancées: <span id="darts-thrown">0</span></p>
+            <p>Précision moyenne: <span id="avg-precision">0</span></p>
+            <p>Meilleur score: <span id="high-score">0</span></p>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
