@@ -9,19 +9,22 @@
 <body>
     <div class="container">
         <h1>Jeu de Fléchettes</h1>
+        <div id="error-container" class="error-message" role="alert"></div>
         <div class="game-container">
-            <canvas id="dartboard" width="800" height="800"></canvas>
+            <canvas id="dartboard" width="800" height="800" aria-label="Cible de fléchettes interactive" role="img"></canvas>
         </div>
         <div class="controls">
-            <div id="weapon-selection">
-                <button class="weapon-button active" data-weapon="dart">Dart 🎯</button>
-                <button class="weapon-button" data-weapon="chainsaw">Tronçonneuse 🪚</button>
+            <div id="weapon-selection" role="radiogroup" aria-label="Sélection de l'arme">
+                <button class="weapon-button active" data-weapon="dart" role="radio" aria-checked="true">Dart 🎯</button>
+                <button class="weapon-button" data-weapon="chainsaw" role="radio" aria-checked="false">Tronçonneuse 🪚</button>
+                <button class="weapon-button" data-weapon="pistol" role="radio" aria-checked="false">Pistolet 🔫</button>
+                <button class="weapon-button" data-weapon="laser" role="radio" aria-checked="false">Laser 💥</button>
             </div>
-            <input type="file" id="uploader" accept="image/*">
-            <button id="reset-button">Nouvelle partie</button>
-            <button id="change-image-button">Changer d'image</button>
+            <input type="file" id="uploader" accept="image/*" aria-label="Charger une image de fond">
+            <button id="reset-button" aria-label="Réinitialiser la partie et les scores">Nouvelle partie</button>
+            <button id="change-image-button" aria-label="Changer l'image de fond de la cible">Changer d'image</button>
         </div>
-        <div class="scores">
+        <div class="scores" aria-live="polite">
             <h2>Score: <span id="score">0</span></h2>
             <p>Dernier lancer: <span id="last-score">0</span></p>
             <p>Fléchettes lancées: <span id="darts-thrown">0</span></p>
@@ -29,6 +32,6 @@
             <p>Meilleur score: <span id="high-score">0</span></p>
         </div>
     </div>
-    <script src="script.js"></script>
+    <script src="script.js" type="module"></script>
 </body>
 </html>

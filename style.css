@@ -1,3 +1,7 @@
+/* ============================================================================
+   General Body and Typography
+   ============================================================================ */
+
 body {
     font-family: 'Arial', sans-serif;
     background-color: #1a1a1a;
@@ -9,17 +13,40 @@ body {
     margin: 0;
 }
 
+h1 {
+    color: #ffc107;
+}
+
+/* ============================================================================
+   Main Container
+   ============================================================================ */
+
 .container {
     text-align: center;
     background-color: #2a2a2a;
     padding: 20px;
     border-radius: 10px;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+    max-width: 90vw;
 }
 
-h1 {
-    color: #ffc107;
+/* ============================================================================
+   Error Message
+   ============================================================================ */
+
+.error-message {
+    display: none;
+    margin-bottom: 15px;
+    padding: 10px;
+    border-radius: 5px;
+    background-color: #8d2a2a;
+    color: #fff;
+    font-weight: bold;
 }
+
+/* ============================================================================
+   Game Canvas
+   ============================================================================ */
 
 .game-container {
     margin-bottom: 20px;
@@ -29,22 +56,61 @@ h1 {
     background-color: #333;
     border-radius: 10px;
     cursor: crosshair;
+    max-width: 100%;
+    height: auto;
 }
 
-#weapon-selection {
-    margin-bottom: 15px;
+/* ============================================================================
+   Controls and Buttons
+   ============================================================================ */
+
+.controls {
+    margin-bottom: 20px;
 }
 
+.controls input[type="file"] {
+    display: none;
+}
+
+.controls button,
 .weapon-button {
     margin: 5px;
     padding: 10px 15px;
-    border: 2px solid transparent;
     border-radius: 5px;
-    background-color: #555;
-    color: #fff;
     font-weight: bold;
     cursor: pointer;
-    transition: all 0.3s;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.controls button:focus,
+.weapon-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(255, 193, 7, 0.5);
+}
+
+.controls button {
+    background-color: #ffc107;
+    color: #1a1a1a;
+}
+
+.controls button:hover {
+    background-color: #ffca2c;
+}
+
+/* Weapon-specific buttons */
+#weapon-selection {
+    margin-bottom: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.weapon-button {
+    background-color: #555;
+    color: #fff;
+    /* Add a font stack that supports emojis */
+    font-family: 'Arial', 'Twemoji Mozilla', 'Noto Color Emoji', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
 }
 
 .weapon-button.active {
@@ -52,25 +118,9 @@ h1 {
     background-color: #333;
 }
 
-.controls button {
-    margin: 5px;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    background-color: #ffc107;
-    color: #1a1a1a;
-    font-weight: bold;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
-.controls button:hover {
-    background-color: #ffca2c;
-}
-
-.controls input[type="file"] {
-    display: none;
-}
+/* ============================================================================
+   Scores Display
+   ============================================================================ */
 
 .scores {
     display: grid;
@@ -90,7 +140,12 @@ h1 {
     background-color: #333;
     padding: 10px;
     border-radius: 5px;
+    margin: 0;
 }
+
+/* ============================================================================
+   Responsive Design
+   ============================================================================ */
 
 @media (max-width: 600px) {
     .container {
@@ -105,5 +160,10 @@ h1 {
 
     .scores {
         grid-template-columns: 1fr;
+    }
+
+    .controls button,
+    .weapon-button {
+        width: calc(50% - 10px); /* Ensure buttons don't overflow */
     }
 }
