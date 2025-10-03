@@ -1,15 +1,15 @@
-import { gameState, scoreZones } from './game.js';
-
 class UI {
-    constructor(domElements, canvasContext) {
+    constructor(domElements, canvasContext, gameState, scoreZones) {
         this.dom = domElements;
         this.ctx = canvasContext;
         this.canvas = this.ctx.canvas;
+        this.gameState = gameState;
+        this.scoreZones = scoreZones;
         this.updateScores({
             score: 0,
             dartsThrown: 0,
             avgPrecision: '0.00',
-            highScore: gameState.highScore,
+            highScore: this.gameState.highScore,
             lastScore: 0,
         });
         this.redrawCanvas();
@@ -25,13 +25,13 @@ class UI {
 
     redrawCanvas() {
         this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        if (gameState.targetImage) {
-            this.ctx.drawImage(gameState.targetImage, 0, 0, this.canvas.width, this.canvas.height);
+        if (this.gameState.targetImage) {
+            this.ctx.drawImage(this.gameState.targetImage, 0, 0, this.canvas.width, this.canvas.height);
             this.drawScoreZones();
         } else {
             this.drawWelcomeMessage();
         }
-        gameState.darts.forEach(d => this.drawProjectile(d.x, d.y, gameState.weapons[d.weapon].size, d.weapon));
+        this.gameState.darts.forEach(d => this.drawProjectile(d.x, d.y, this.gameState.weapons[d.weapon].size, d.weapon));
     }
 
     drawWelcomeMessage() {
@@ -47,10 +47,10 @@ class UI {
         const centerX = this.canvas.width / 2;
         const centerY = this.canvas.height / 2;
 
-        scoreZones.forEach(zone => {
+        this.scoreZones.forEach(zone => {
             this.ctx.beginPath();
             this.ctx.arc(centerX, centerY, zone.radius, 0, Math.PI * 2);
-            if (gameState.hoveredZone === zone) {
+            if (this.gameState.hoveredZone === zone) {
                 this.ctx.strokeStyle = 'rgba(255, 223, 0, 1)';
                 this.ctx.lineWidth = 3;
             } else {
@@ -62,7 +62,7 @@ class UI {
     }
 
     drawProjectile(x, y, size, weapon) {
-        const emoji = gameState.weapons[weapon].emoji;
+        const emoji = this.gameState.weapons[weapon].emoji;
         this.ctx.font = `${size}px serif`;
         this.ctx.textAlign = 'center';
         this.ctx.textBaseline = 'middle';

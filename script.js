@@ -1,4 +1,4 @@
-import { gameState, resetGame, changeWeapon, handleCanvasClick, handleMouseMove, handleMouseLeave } from './game.js';
+import { gameState, scoreZones, resetGame, changeWeapon, handleCanvasClick, handleMouseMove, handleMouseLeave } from './game.js';
 import { UI } from './ui.js';
 import { ErrorHandler, initAudio } from './utils.js';
 
@@ -18,7 +18,7 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     const ctx = domElements.canvas.getContext('2d');
-    const ui = new UI(domElements, ctx);
+    const ui = new UI(domElements, ctx, gameState, scoreZones);
     const errorHandler = new ErrorHandler(domElements.errorContainer);
 
     function onImageLoad(img) {
