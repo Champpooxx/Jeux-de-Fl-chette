@@ -1,375 +1,76 @@
-// ============================================================================
-//  Jeu de Fléchettes - A simple dart game in HTML, CSS, and JavaScript
-// ============================================================================
+import { gameState, resetGame, changeWeapon, handleCanvasClick, handleMouseMove, handleMouseLeave } from './game.js';
+import { UI } from './ui.js';
+import { ErrorHandler, initAudio } from './utils.js';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // ----------------------------------------------------------------------------
-    //  DOM Elements
-    // ----------------------------------------------------------------------------
+    const domElements = {
+        canvas: document.getElementById('dartboard'),
+        uploader: document.getElementById('uploader'),
+        resetButton: document.getElementById('reset-button'),
+        changeImageButton: document.getElementById('change-image-button'),
+        weaponButtons: document.querySelectorAll('.weapon-button'),
+        scoreEl: document.getElementById('score'),
+        lastScoreEl: document.getElementById('last-score'),
+        dartsThrownEl: document.getElementById('darts-thrown'),
+        avgPrecisionEl: document.getElementById('avg-precision'),
+        highScoreEl: document.getElementById('high-score'),
+        errorContainer: document.getElementById('error-container')
+    };
 
-    const canvas = document.getElementById('dartboard');
-    const ctx = canvas.getContext('2d');
-    const uploader = document.getElementById('uploader');
-    const resetButton = document.getElementById('reset-button');
-    const changeImageButton = document.getElementById('change-image-button');
-    const weaponButtons = document.querySelectorAll('.weapon-button');
-    const scoreEl = document.getElementById('score');
-    const lastScoreEl = document.getElementById('last-score');
-    const dartsThrownEl = document.getElementById('darts-thrown');
-    const avgPrecisionEl = document.getElementById('avg-precision');
-    const highScoreEl = document.getElementById('high-score');
+    const ctx = domElements.canvas.getContext('2d');
+    const ui = new UI(domElements, ctx);
+    const errorHandler = new ErrorHandler(domElements.errorContainer);
 
-    // ----------------------------------------------------------------------------
-    //  Game State
-    // ----------------------------------------------------------------------------
+    function onImageLoad(img) {
+        gameState.targetImage = img;
+        resetGame();
+        ui.redrawCanvas();
+        ui.updateScores({
+            score: 0,
+            dartsThrown: 0,
+            avgPrecision: '0.00',
+            highScore: gameState.highScore,
+            lastScore: 0,
+        });
+    }
 
-    let score = 0;
-    let dartsThrown = 0;
-    let totalDistance = 0;
-    let targetImage = null;
-    let darts = [];
-    let isAnimating = false;
-    let hoveredZone = null;
-    let highScore = localStorage.getItem('highScore') || 0;
-    let audioContext;
-    let currentWeapon = 'dart';
+    domElements.uploader.addEventListener('change', (e) => ui.handleImageUpload(e, errorHandler, onImageLoad));
+    domElements.changeImageButton.addEventListener('click', () => domElements.uploader.click());
 
-    // ----------------------------------------------------------------------------
-    //  Configuration
-    // ----------------------------------------------------------------------------
+    domElements.canvas.addEventListener('click', (event) => {
+        initAudio();
+        const rect = domElements.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        handleCanvasClick(x, y, domElements.canvas, ui);
+    });
 
-    const MAX_WIDTH = 800;
-    const MAX_HEIGHT = 800;
+    domElements.canvas.addEventListener('mousemove', (event) => {
+        const rect = domElements.canvas.getBoundingClientRect();
+        const x = event.clientX - rect.left;
+        const y = event.clientY - rect.top;
+        handleMouseMove(x, y, domElements.canvas, ui);
+    });
 
-    const scoreZones = [
-        { radius: 24, points: 100 },
-        { radius: 48, points: 50 },
-        { radius: 96, points: 25 },
-        { radius: 144, points: 10 },
-        { radius: 240, points: 5 },
-    ];
+    domElements.canvas.addEventListener('mouseleave', () => handleMouseLeave(ui));
 
-    // ----------------------------------------------------------------------------
-    //  Initialization
-    // ----------------------------------------------------------------------------
-
-    highScoreEl.textContent = highScore;
-    redrawCanvas();
-
-    // ----------------------------------------------------------------------------
-    //  Event Listeners
-    // ----------------------------------------------------------------------------
-
-    uploader.addEventListener('change', handleImageUpload);
-    changeImageButton.addEventListener('click', () => uploader.click());
-    canvas.addEventListener('click', handleCanvasClick);
-    canvas.addEventListener('mousemove', handleMouseMove);
-    canvas.addEventListener('mouseleave', handleMouseLeave);
-    resetButton.addEventListener('click', resetGame);
-    weaponButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            currentWeapon = button.dataset.weapon;
-            weaponButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
+    domElements.resetButton.addEventListener('click', () => {
+        resetGame();
+        ui.redrawCanvas();
+        ui.updateScores({
+            score: 0,
+            dartsThrown: 0,
+            avgPrecision: '0.00',
+            highScore: gameState.highScore,
+            lastScore: 0,
         });
     });
 
-    // ----------------------------------------------------------------------------
-    //  Image Handling
-    // ----------------------------------------------------------------------------
-
-    /**
-     * Handles the image upload process.
-     * @param {Event} event - The file input change event.
-     */
-    function handleImageUpload(event) {
-        const file = event.target.files[0];
-        if (file) {
-            if (!file.type.startsWith('image/')) {
-                alert('Veuillez sélectionner un fichier image.');
-                return;
-            }
-            const reader = new FileReader();
-            reader.onload = function(e) {
-                const img = new Image();
-                img.onload = function() {
-                    const aspectRatio = img.width / img.height;
-                    let newWidth = MAX_WIDTH;
-                    let newHeight = MAX_HEIGHT;
-
-                    if (img.width > img.height) {
-                        newHeight = MAX_WIDTH / aspectRatio;
-                    } else {
-                        newWidth = MAX_HEIGHT * aspectRatio;
-                    }
-
-                    canvas.width = newWidth;
-                    canvas.height = newHeight;
-                    targetImage = img;
-                    resetGame();
-                }
-                img.src = e.target.result;
-            }
-            reader.readAsDataURL(file);
-        }
-    }
-
-    // ----------------------------------------------------------------------------
-    //  Mouse and Click Handlers
-    // ----------------------------------------------------------------------------
-
-    /**
-     * Handles mouse movement over the canvas to highlight scoring zones.
-     * @param {MouseEvent} event - The mouse move event.
-     */
-    function handleMouseMove(event) {
-        if (!targetImage || isAnimating) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        const distance = Math.sqrt(Math.pow(x - canvas.width / 2, 2) + Math.pow(y - canvas.height / 2, 2));
-
-        let currentHoveredZone = null;
-        for (const zone of scoreZones) {
-            if (distance <= zone.radius) {
-                currentHoveredZone = zone;
-                break;
-            }
-        }
-
-        if (hoveredZone !== currentHoveredZone) {
-            hoveredZone = currentHoveredZone;
-            redrawCanvas();
-        }
-    }
-
-    /**
-     * Handles the mouse leaving the canvas area.
-     */
-    function handleMouseLeave() {
-        if (hoveredZone) {
-            hoveredZone = null;
-            redrawCanvas();
-        }
-    }
-
-    /**
-     * Handles clicks on the canvas to throw a dart.
-     * @param {MouseEvent} event - The click event.
-     */
-    function handleCanvasClick(event) {
-        if (!targetImage || isAnimating) {
-            return;
-        }
-        initAudio();
-
-        const rect = canvas.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-
-        animateProjectile({ x, y });
-    }
-
-    // ----------------------------------------------------------------------------
-    //  Animation and Drawing
-    // ----------------------------------------------------------------------------
-
-    /**
-     * Animates the projectile throw.
-     * @param {object} target - The x and y coordinates of the target.
-     */
-    function animateProjectile(target) {
-        isAnimating = true;
-        const duration = 500; // ms
-        const start = { x: canvas.width / 2, y: canvas.height + 50, size: 100 };
-        const end = { x: target.x, y: target.y, size: 24 };
-
-        let startTime = null;
-
-        function animationStep(timestamp) {
-            if (!startTime) startTime = timestamp;
-            const progress = Math.min((timestamp - startTime) / duration, 1);
-            const easeOutQuart = 1 - Math.pow(1 - progress, 4);
-
-            const currentX = start.x + (end.x - start.x) * easeOutQuart;
-            const currentY = start.y + (end.y - start.y) * easeOutQuart;
-            const currentSize = start.size + (end.size - start.size) * easeOutQuart;
-
-            redrawCanvas();
-            drawProjectile(currentX, currentY, currentSize, currentWeapon);
-
-            if (progress < 1) {
-                requestAnimationFrame(animationStep);
-            } else {
-                darts.push({ x: target.x, y: target.y, weapon: currentWeapon });
-                playHitSound();
-                calculateScore(target.x, target.y);
-                updateStats();
-                isAnimating = false;
-                redrawCanvas();
-            }
-        }
-
-        requestAnimationFrame(animationStep);
-    }
-
-    /**
-     * Draws a projectile on the canvas.
-     * @param {number} x - The x coordinate.
-     * @param {number} y - The y coordinate.
-     * @param {number} size - The size of the projectile emoji.
-     * @param {string} weapon - The weapon type.
-     */
-    function drawProjectile(x, y, size = 24, weapon = 'dart') {
-        ctx.font = `${size}px serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
-        const emoji = weapon === 'dart' ? '🎯' : '🪚';
-        ctx.fillText(emoji, x, y);
-    }
-
-    /**
-     * Redraws the entire canvas.
-     */
-    function redrawCanvas() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        if (targetImage) {
-            ctx.drawImage(targetImage, 0, 0, canvas.width, canvas.height);
-            drawScoreZones();
-        } else {
-            drawWelcomeMessage();
-        }
-        darts.forEach(d => drawProjectile(d.x, d.y, 24, d.weapon));
-    }
-
-    /**
-     * Draws the welcome message on the canvas.
-     */
-    function drawWelcomeMessage() {
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.font = '20px Arial';
-        ctx.fillText("Chargez une image pour commencer !", canvas.width / 2, canvas.height / 2);
-    }
-
-    /**
-     * Draws the scoring zones on the canvas.
-     */
-    function drawScoreZones() {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-
-        scoreZones.forEach(zone => {
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, zone.radius, 0, Math.PI * 2);
-            if (hoveredZone === zone) {
-                ctx.strokeStyle = 'rgba(255, 223, 0, 1)';
-                ctx.lineWidth = 3;
-            } else {
-                ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-                ctx.lineWidth = 2;
-            }
-            ctx.stroke();
+    domElements.weaponButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const weapon = button.dataset.weapon;
+            changeWeapon(weapon);
+            ui.setActiveButton(weapon);
         });
-    }
-
-    // ----------------------------------------------------------------------------
-    //  Scoring and Stats
-    // ----------------------------------------------------------------------------
-
-    /**
-     * Calculates the score based on the dart's position.
-     * @param {number} x - The x coordinate of the dart.
-     * @param {number} y - The y coordinate of the dart.
-     */
-    function calculateScore(x, y) {
-        const centerX = canvas.width / 2;
-        const centerY = canvas.height / 2;
-        const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
-
-        let currentScore = 0;
-        for (const zone of scoreZones) {
-            if (distance <= zone.radius) {
-                currentScore = zone.points;
-                break;
-            }
-        }
-
-        score += currentScore;
-        lastScoreEl.textContent = currentScore;
-        scoreEl.textContent = score;
-        totalDistance += distance;
-    }
-
-    /**
-     * Updates the game statistics.
-     */
-    function updateStats() {
-        dartsThrown++;
-        dartsThrownEl.textContent = dartsThrown;
-
-        const avgPrecision = totalDistance / dartsThrown;
-        avgPrecisionEl.textContent = avgPrecision.toFixed(2);
-
-        if (score > highScore) {
-            highScore = score;
-            localStorage.setItem('highScore', highScore);
-            highScoreEl.textContent = highScore;
-        }
-    }
-
-    // ----------------------------------------------------------------------------
-    //  Game Management
-    // ----------------------------------------------------------------------------
-
-    /**
-     * Resets the game to its initial state.
-     */
-    function resetGame() {
-        score = 0;
-        dartsThrown = 0;
-        totalDistance = 0;
-        darts = [];
-        scoreEl.textContent = '0';
-        lastScoreEl.textContent = '0';
-        dartsThrownEl.textContent = '0';
-        avgPrecisionEl.textContent = '0';
-        redrawCanvas();
-    }
-
-    // ----------------------------------------------------------------------------
-    //  Audio
-    // ----------------------------------------------------------------------------
-
-    /**
-     * Initializes the AudioContext.
-     */
-    function initAudio() {
-        if (!audioContext) {
-            audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        }
-    }
-
-    /**
-     * Plays a hit sound effect.
-     */
-    function playHitSound() {
-        if (!audioContext) return;
-        const oscillator = audioContext.createOscillator();
-        const gainNode = audioContext.createGain();
-
-        oscillator.type = 'triangle';
-        oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
-        gainNode.gain.setValueAtTime(0.5, audioContext.currentTime);
-
-        oscillator.connect(gainNode);
-        gainNode.connect(audioContext.destination);
-
-        oscillator.start();
-        gainNode.gain.exponentialRampToValueAtTime(0.0001, audioContext.currentTime + 0.2);
-        oscillator.stop(audioContext.currentTime + 0.2);
-    }
+    });
 });
